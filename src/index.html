@@ -172,7 +172,7 @@
                         <div>
                             <label>券${index+1}：</label>
                             <div>
-                                ${['無', 10, 20, 50, 100].map(v => `
+                                ${['無', 10, 20, 50, 100, 200].map(v => `
                                     <button onclick="updateCoupon(${recordId}, ${index}, ${v === '無' ? 0 : v})">
                                         ${v}
                                     </button>
@@ -249,7 +249,7 @@
             editor.innerHTML = `
                 <h3>修改 ${record.channel} 的券${index+1}</h3>
                 <div>
-                    ${['無', 10, 20, 50, 100].map(v => `
+                    ${['無', 10, 20, 50, 100, 200].map(v => `
                         <button onclick="updateCoupon(${recordId}, ${index}, ${v === '無' ? 0 : v})" 
                                 style="${record.coupons[index] === (v === '無' ? 0 : v) ? 'font-weight: bold;' : ''}">
                             ${v}
