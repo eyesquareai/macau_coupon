@@ -84,10 +84,45 @@
         .footer a:hover {
             text-decoration: underline; /* Underline on hover */
         }
+        /* New styles for selected buttons */
+        .selected-btn {
+            background-color: #2196F3;
+            color: white;
+            font-weight: bold;
+        }
+        /* Summary section styles */
+        .summary-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: right;
+        }
+        .summary-item {
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        .summary-value {
+            color: #2196F3;
+        }
+        /* Header container for positioning */
+        .header-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>消費券記錄App</h1>
+    <div class="header-container">
+        <h1>消費券記錄App</h1>
+        <div class="summary-container">
+            <div class="summary-item">總消費額: <span id="totalConsumption" class="summary-value">$0</span></div>
+            <div class="summary-item">剩餘消費券金額: <span id="remainingCoupons" class="summary-value">$0</span></div>
+        </div>
+    </div>
     <button class="main-btn" onclick="toggleChannels()">＋ 快速新增</button>
     <div class="channel-menu" id="channelMenu">
         <!-- 澳門八大支付渠道 -->
@@ -161,6 +196,24 @@
             showCouponEditor(newRecord.id);
         }
 
+        function updateButtonHighlighting(recordId, index, value) {
+            const editorPanel = document.querySelector('.edit-panel');
+            if (editorPanel) {
+                const couponSection = editorPanel.querySelector(`.coupon-section[data-coupon-index="${index}"]`);
+                if (couponSection) {
+                    const buttons = couponSection.querySelectorAll('button');
+                    buttons.forEach(btn => {
+                        const btnValue = parseInt(btn.textContent) || 0;
+                        if (btnValue === value) {
+                            btn.classList.add('selected-btn');
+                        } else {
+                            btn.classList.remove('selected-btn');
+                        }
+                    });
+                }
+            }
+        }
+
         function showCouponEditor(recordId) {
             const record = records.find(r => r.id === recordId);
             const editor = document.createElement('div');
@@ -168,15 +221,20 @@
             editor.innerHTML = `
                 <h3>${record.channel} - 設定優惠券</h3>
                 <div style="display: grid; gap: 10px;">
-                    ${record.coupons.map((_, index) => `
-                        <div>
+                    ${record.coupons.map((coupon, index) => `
+                        <div class="coupon-section" data-coupon-index="${index}">
                             <label>券${index+1}：</label>
                             <div>
-                                ${['無', 10, 20, 50, 100, 200].map(v => `
-                                    <button onclick="updateCoupon(${recordId}, ${index}, ${v === '無' ? 0 : v})">
-                                        ${v}
-                                    </button>
-                                `).join('')}
+                                ${['無', 10, 20, 50, 100, 200].map(v => {
+                                    const value = v === '無' ? 0 : v;
+                                    const isSelected = coupon.value === value;
+                                    return `
+                                        <button onclick="updateCoupon(${recordId}, ${index}, ${value})" 
+                                                class="${isSelected ? 'selected-btn' : ''}">
+                                            ${v}
+                                        </button>
+                                    `;
+                                }).join('')}
                             </div>
                         </div>
                     `).join('')}
@@ -203,8 +261,13 @@
             record.total = record.coupons.reduce((sum, c) => {
                 return c.status === '未使用' ? sum + (c.value || 0) : sum;
             }, 0) * 3; // Multiply the sum by 3
+
+            // Update button highlighting
+            updateButtonHighlighting(recordId, index, value);
+
             saveData();
             renderTable();
+            updateSummary();
         }
 
         function renderTable() {
@@ -240,6 +303,9 @@
                     </tr>
                 `;
             }).join('');
+            
+            // Update summary after rendering table
+            updateSummary();
         }
 
         function editSingleCoupon(recordId, index) {
@@ -248,13 +314,17 @@
             editor.className = 'edit-panel';
             editor.innerHTML = `
                 <h3>修改 ${record.channel} 的券${index+1}</h3>
-                <div>
-                    ${['無', 10, 20, 50, 100, 200].map(v => `
-                        <button onclick="updateCoupon(${recordId}, ${index}, ${v === '無' ? 0 : v})" 
-                                style="${record.coupons[index] === (v === '無' ? 0 : v) ? 'font-weight: bold;' : ''}">
-                            ${v}
-                        </button>
-                    `).join('')}
+                <div class="coupon-section" data-coupon-index="${index}">
+                    ${['無', 10, 20, 50, 100, 200].map(v => {
+                        const value = v === '無' ? 0 : v;
+                        const isSelected = record.coupons[index].value === value;
+                        return `
+                            <button onclick="updateCoupon(${recordId}, ${index}, ${value})" 
+                                    class="${isSelected ? 'selected-btn' : ''}">
+                                ${v}
+                            </button>
+                        `;
+                    }).join('')}
                 </div>
                 <button style="margin-top:10px;" onclick="this.parentElement.remove()">關閉</button>
             `;
@@ -293,6 +363,24 @@
             
             saveData(); // Save to local storage
             renderTable();
+        }
+        
+        // New function to update the summary section
+        function updateSummary() {
+            // Calculate total consumption (sum of all record totals)
+            const totalConsumption = records.reduce((sum, record) => sum + record.total, 0);
+            
+            // Calculate remaining coupon amount (sum of all unused coupons)
+            const remainingCoupons = records.reduce((sum, record) => {
+                return sum + record.coupons.reduce((couponSum, coupon) => {
+                    // Only count unused coupons and use their actual value
+                    return coupon.status === '未使用' && coupon.value !== null ? couponSum + coupon.value : couponSum;
+                }, 0);
+            }, 0);
+            
+            // Update the summary display
+            document.getElementById('totalConsumption').textContent = `$${totalConsumption}`;
+            document.getElementById('remainingCoupons').textContent = `$${remainingCoupons}`;
         }
 
         // 初始化
