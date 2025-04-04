@@ -14,7 +14,98 @@
             background: #f5f5f5;
             display: flex;
             flex-direction: column;
-            min-height: 100vh; /* Ensure the body takes full height */
+            min-height: 100vh;
+        }
+        /* Header styles */
+        .header-container {
+            position: relative;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header-title {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .lang-switch {
+            background: #2196F3;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+            white-space: nowrap;
+        }
+        .summary-container {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+        }
+        .summary-label {
+            font-weight: bold;
+        }
+        .summary-value {
+            color: #2196F3;
+            font-weight: bold;
+        }
+        /* Table styles */
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            min-width: 600px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .header-title {
+                font-size: 1.2rem;
+            }
+            .summary-container {
+                padding: 10px;
+            }
+            th, td {
+                padding: 8px;
+                font-size: 0.9rem;
+            }
+            .main-btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+            .channel-btn {
+                padding: 8px;
+                font-size: 0.9rem;
+            }
         }
         .main-btn {
             background: #4CAF50;
@@ -38,17 +129,6 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            margin-top: 20px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: center;
         }
         .edit-btn {
             color: #2196F3;
@@ -90,68 +170,105 @@
             color: white;
             font-weight: bold;
         }
-        /* Summary section styles */
-        .summary-container {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            text-align: right;
+        /* Filter button styles */
+        .filter-container {
+            display: flex;
+            justify-content: flex-end;
+            margin: 10px 0;
+            gap: 10px;
         }
-        .summary-item {
-            margin: 5px 0;
-            font-weight: bold;
+        .filter-btn {
+            background: #2196F3;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
-        .summary-value {
-            color: #2196F3;
+        .filter-btn.active {
+            background: #1976D2;
         }
-        /* Header container for positioning */
-        .header-container {
-            position: relative;
-            margin-bottom: 20px;
+        .filter-btn i {
+            font-size: 14px;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .filter-container {
+                justify-content: center;
+            }
+            .filter-btn {
+                padding: 6px 12px;
+                font-size: 0.9rem;
+            }
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .lang-switch {
+                align-self: flex-end;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header-container">
-        <h1>消費券記錄App</h1>
+        <div class="header-top">
+            <h1 class="header-title" id="appTitle">消費券記錄App</h1>
+            <button class="lang-switch" onclick="toggleLanguage()">English</button>
+        </div>
         <div class="summary-container">
-            <div class="summary-item">總消費額: <span id="totalConsumption" class="summary-value">$0</span></div>
-            <div class="summary-item">剩餘消費券金額: <span id="remainingCoupons" class="summary-value">$0</span></div>
+            <div class="summary-item">
+                <span class="summary-label" id="totalConsumptionLabel">總消費額</span>
+                <span id="totalConsumption" class="summary-value">$0</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label" id="remainingCouponsLabel">剩餘消費券金額</span>
+                <span id="remainingCoupons" class="summary-value">$0</span>
+            </div>
         </div>
     </div>
-    <button class="main-btn" onclick="toggleChannels()">＋ 快速新增</button>
-    <div class="channel-menu" id="channelMenu">
-        <!-- 澳門八大支付渠道 -->
-        <button class="channel-btn" data-channel="中銀手機銀行">中銀 BOC</button>
-        <button class="channel-btn" data-channel="工銀e支付">工銀 ICBC</button>
-        <button class="channel-btn" data-channel="支付寶（澳門）Alipay">支付寶（澳門）Alipay</button>
-        <button class="channel-btn" data-channel="澳門通MPay">澳門通 MPay</button>
-        <button class="channel-btn" data-channel="廣發錢包">廣發錢包 </button>
-        <button class="channel-btn" data-channel="LusoPay">國際銀行 LusoPay</button>
-        <button class="channel-btn" data-channel="大豐豐付寶">大豐 豐付寶</button>
-        <button class="channel-btn" data-channel="UePay">南粵 UePay</button>
+
+    <div class="filter-container">
+        <button class="filter-btn" onclick="toggleFilter()" id="filterBtn">
+            <i class="fas fa-filter"></i>
+            <span id="filterText">顯示未到期</span>
+        </button>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>輸入日期</th>
-                <th>支付渠道</th>
-                <th>券1</th>
-                <th>券2</th>
-                <th>券3</th>
-                <th>總消費額</th>
-                <th>過期日</th>
-                <th>狀態</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody id="recordsBody"></tbody>
-    </table>
+    <button class="main-btn" onclick="toggleChannels()" id="quickAddBtn">＋ 快速新增</button>
+    <div class="channel-menu" id="channelMenu">
+        <!-- 澳門八大支付渠道 -->
+        <button class="channel-btn" data-channel="中銀手機銀行" data-channel-en="BOC Mobile Banking">中銀 BOC</button>
+        <button class="channel-btn" data-channel="工銀e支付" data-channel-en="ICBC e-Payment">工銀 ICBC</button>
+        <button class="channel-btn" data-channel="支付寶（澳門）Alipay" data-channel-en="Alipay (Macau)">支付寶（澳門）Alipay</button>
+        <button class="channel-btn" data-channel="澳門通MPay" data-channel-en="Macau Pass MPay">澳門通 MPay</button>
+        <button class="channel-btn" data-channel="廣發錢包" data-channel-en="CGB Wallet">廣發錢包</button>
+        <button class="channel-btn" data-channel="LusoPay" data-channel-en="LusoPay">國際銀行 LusoPay</button>
+        <button class="channel-btn" data-channel="大豐豐付寶" data-channel-en="Tai Fung Pay">大豐 豐付寶</button>
+        <button class="channel-btn" data-channel="UePay" data-channel-en="UePay">南粵 UePay</button>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th id="dateHeader">輸入日期</th>
+                    <th id="channelHeader">支付渠道</th>
+                    <th id="coupon1Header">券1</th>
+                    <th id="coupon2Header">券2</th>
+                    <th id="coupon3Header">券3</th>
+                    <th id="totalHeader">總消費額</th>
+                    <th id="expiryHeader">過期日</th>
+                    <th id="statusHeader">狀態</th>
+                    <th id="actionHeader">操作</th>
+                </tr>
+            </thead>
+            <tbody id="recordsBody"></tbody>
+        </table>
+    </div>
 
     <div class="footer">
         <span>© 2025 Eyesquare Ltd. X Nardo Lao</span>
@@ -165,6 +282,127 @@
 
     <script>
         let records = JSON.parse(localStorage.getItem('coupons')) || [];
+        let currentLanguage = 'zh'; // Default language
+        let showOnlyValid = false; // Track filter state
+
+        // Add channel mapping for backward compatibility
+        const channelMapping = {
+            '中銀手機銀行': 'BOC Mobile Banking',
+            '工銀e支付': 'ICBC e-Payment',
+            '支付寶（澳門）Alipay': 'Alipay (Macau)',
+            '澳門通MPay': 'Macau Pass MPay',
+            '廣發錢包': 'CGB Wallet',
+            'LusoPay': 'LusoPay',
+            '大豐豐付寶': 'Tai Fung Pay',
+            'UePay': 'UePay'
+        };
+
+        // Process existing records to add channelEn if missing
+        records = records.map(record => {
+            if (!record.channelEn && record.channel) {
+                record.channelEn = channelMapping[record.channel] || record.channel;
+            }
+            return record;
+        });
+        saveData(); // Save the updated records
+
+        // Language translations
+        const translations = {
+            zh: {
+                appTitle: '消費券記錄App',
+                totalConsumption: '總消費額',
+                remainingCoupons: '剩餘消費券金額',
+                quickAdd: '＋ 快速新增',
+                date: '輸入日期',
+                channel: '支付渠道',
+                coupon1: '券1',
+                coupon2: '券2',
+                coupon3: '券3',
+                total: '總消費額',
+                expiry: '過期日',
+                status: '狀態',
+                action: '操作',
+                delete: '刪除',
+                edit: '✎',
+                none: '無',
+                unused: '未使用',
+                used: '已使用',
+                expired: '已過期',
+                daysLeft: '剩',
+                days: '天',
+                valid: '有效',
+                confirmDelete: '確定刪除此記錄？',
+                close: '關閉',
+                setCoupons: '設定優惠券',
+                done: '完成',
+                showAll: '顯示全部',
+                showValidOnly: '顯示未到期'
+            },
+            en: {
+                appTitle: 'Macau Coupon Manager',
+                totalConsumption: 'Total Consumption',
+                remainingCoupons: 'Remaining Coupons',
+                quickAdd: '＋ Quick Add',
+                date: 'Date',
+                channel: 'Payment Channel',
+                coupon1: 'Coupon 1',
+                coupon2: 'Coupon 2',
+                coupon3: 'Coupon 3',
+                total: 'Total',
+                expiry: 'Expiry Date',
+                status: 'Status',
+                action: 'Action',
+                delete: 'Delete',
+                edit: '✎',
+                none: 'None',
+                unused: 'Unused',
+                used: 'Used',
+                expired: 'Expired',
+                daysLeft: 'Left',
+                days: 'days',
+                valid: 'Valid',
+                confirmDelete: 'Are you sure you want to delete this record?',
+                close: 'Close',
+                setCoupons: 'Set Coupons',
+                done: 'Done',
+                showAll: 'Show All',
+                showValidOnly: 'Show Valid Only'
+            }
+        };
+
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'zh' ? 'en' : 'zh';
+            document.querySelector('.lang-switch').textContent = currentLanguage === 'zh' ? 'English' : '中文';
+            updateLanguage();
+        }
+
+        function updateLanguage() {
+            const lang = translations[currentLanguage];
+            
+            // Update all text elements
+            document.getElementById('appTitle').textContent = lang.appTitle;
+            document.getElementById('totalConsumptionLabel').textContent = lang.totalConsumption;
+            document.getElementById('remainingCouponsLabel').textContent = lang.remainingCoupons;
+            document.getElementById('quickAddBtn').textContent = lang.quickAdd;
+            document.getElementById('dateHeader').textContent = lang.date;
+            document.getElementById('channelHeader').textContent = lang.channel;
+            document.getElementById('coupon1Header').textContent = lang.coupon1;
+            document.getElementById('coupon2Header').textContent = lang.coupon2;
+            document.getElementById('coupon3Header').textContent = lang.coupon3;
+            document.getElementById('totalHeader').textContent = lang.total;
+            document.getElementById('expiryHeader').textContent = lang.expiry;
+            document.getElementById('statusHeader').textContent = lang.status;
+            document.getElementById('actionHeader').textContent = lang.action;
+            
+            // Update filter button text
+            const filterText = document.getElementById('filterText');
+            filterText.textContent = showOnlyValid 
+                ? (currentLanguage === 'zh' ? '顯示全部' : 'Show All')
+                : (currentLanguage === 'zh' ? '顯示未到期' : 'Show Valid Only');
+
+            // Re-render table to update status texts
+            renderTable();
+        }
 
         // 初始化渠道按鈕
         document.querySelectorAll('.channel-btn').forEach(btn => {
@@ -185,7 +423,8 @@
             const newRecord = {
                 id: Date.now(),
                 channel,
-                dateAdded: today.toISOString().split('T')[0], // Get today's date in YYYY-MM-DD format
+                channelEn: channelMapping[channel] || channel,
+                dateAdded: today.toISOString().split('T')[0],
                 coupons: [{ value: null, status: '未使用' }, { value: null, status: '未使用' }, { value: null, status: '未使用' }],
                 expiry: getNextSunday(),
                 total: 0
@@ -216,17 +455,19 @@
 
         function showCouponEditor(recordId) {
             const record = records.find(r => r.id === recordId);
+            const lang = translations[currentLanguage];
+            const channelDisplay = currentLanguage === 'zh' ? record.channel : record.channelEn;
             const editor = document.createElement('div');
             editor.className = 'edit-panel';
             editor.innerHTML = `
-                <h3>${record.channel} - 設定優惠券</h3>
+                <h3>${channelDisplay} - ${lang.setCoupons}</h3>
                 <div style="display: grid; gap: 10px;">
                     ${record.coupons.map((coupon, index) => `
                         <div class="coupon-section" data-coupon-index="${index}">
-                            <label>券${index+1}：</label>
+                            <label>${lang.coupon1.replace('1', index+1)}：</label>
                             <div>
-                                ${['無', 10, 20, 50, 100, 200].map(v => {
-                                    const value = v === '無' ? 0 : v;
+                                ${[lang.none, 10, 20, 50, 100, 200].map(v => {
+                                    const value = v === lang.none ? 0 : v;
                                     const isSelected = coupon.value === value;
                                     return `
                                         <button onclick="updateCoupon(${recordId}, ${index}, ${value})" 
@@ -239,7 +480,7 @@
                         </div>
                     `).join('')}
                 </div>
-                <button style="margin-top:15px;" onclick="this.parentElement.remove()">完成</button>
+                <button style="margin-top:15px;" onclick="this.parentElement.remove()">${lang.done}</button>
             `;
             document.body.appendChild(editor);
         }
@@ -272,51 +513,66 @@
 
         function renderTable() {
             const tbody = document.getElementById('recordsBody');
-            tbody.innerHTML = records.map(record => {
+            const lang = translations[currentLanguage];
+            
+            // Filter records if needed
+            const filteredRecords = showOnlyValid 
+                ? records.filter(record => {
+                    const expiryDate = new Date(record.expiry);
+                    const now = new Date();
+                    now.setUTCDate(now.getUTCDate());
+                    return expiryDate >= now;
+                })
+                : records;
+            
+            tbody.innerHTML = filteredRecords.map(record => {
                 const expiryDate = new Date(record.expiry);
                 const now = new Date();
                 now.setUTCDate(now.getUTCDate());
                 const diffTime = expiryDate - now;
                 const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
 
-                let status = diffDays < 0 ? '已過期' : diffDays <= 7 ? `剩${diffDays}天` : '有效';
+                let status = diffDays < 0 ? lang.expired : 
+                            diffDays <= 7 ? `${lang.daysLeft}${diffDays}${lang.days}` : 
+                            lang.valid;
 
-                // If the record doesn't have a dateAdded (for older records), use a placeholder
                 const dateAdded = record.dateAdded || "未記錄";
+                const channelDisplay = currentLanguage === 'zh' ? record.channel : record.channelEn;
 
                 return `
                     <tr>
                         <td>${dateAdded}</td>
-                        <td>${record.channel}</td>
+                        <td>${channelDisplay}</td>
                         ${record.coupons.map((c, i) => `
-                            <td ondblclick="toggleCouponStatus(${record.id}, ${i})" style="${c.status === '已使用' ? 'text-decoration: line-through;' : ''}">
-                                ${c.value !== null ? c.value : '-'}${c.status === '已使用' ? ` (${c.status})` : ''}
-                                <span class="edit-btn" onclick="editSingleCoupon(${record.id}, ${i})">✎</span>
+                            <td ondblclick="toggleCouponStatus(${record.id}, ${i})" style="${c.status === lang.used ? 'text-decoration: line-through;' : ''}">
+                                ${c.value !== null ? c.value : '-'}${c.status === lang.used ? ` (${c.status})` : ''}
+                                <span class="edit-btn" onclick="editSingleCoupon(${record.id}, ${i})">${lang.edit}</span>
                             </td>
                         `).join('')}
                         <td>$${record.total}</td>
                         <td>${record.expiry.slice(0,10)}</td>
-                        <td class="${status.includes('過期') ? 'expired' : ''}">${status}</td>
+                        <td class="${status.includes(lang.expired) ? 'expired' : ''}">${status}</td>
                         <td>
-                            <span class="edit-btn" onclick="deleteRecord(${record.id})">刪除</span>
+                            <span class="edit-btn" onclick="deleteRecord(${record.id})">${lang.delete}</span>
                         </td>
                     </tr>
                 `;
             }).join('');
             
-            // Update summary after rendering table
             updateSummary();
         }
 
         function editSingleCoupon(recordId, index) {
             const record = records.find(r => r.id === recordId);
+            const lang = translations[currentLanguage];
+            const channelDisplay = currentLanguage === 'zh' ? record.channel : record.channelEn;
             const editor = document.createElement('div');
             editor.className = 'edit-panel';
             editor.innerHTML = `
-                <h3>修改 ${record.channel} 的券${index+1}</h3>
+                <h3>${lang.setCoupons} ${index+1} for ${channelDisplay}</h3>
                 <div class="coupon-section" data-coupon-index="${index}">
-                    ${['無', 10, 20, 50, 100, 200].map(v => {
-                        const value = v === '無' ? 0 : v;
+                    ${[lang.none, 10, 20, 50, 100, 200].map(v => {
+                        const value = v === lang.none ? 0 : v;
                         const isSelected = record.coupons[index].value === value;
                         return `
                             <button onclick="updateCoupon(${recordId}, ${index}, ${value})" 
@@ -326,13 +582,13 @@
                         `;
                     }).join('')}
                 </div>
-                <button style="margin-top:10px;" onclick="this.parentElement.remove()">關閉</button>
+                <button style="margin-top:10px;" onclick="this.parentElement.remove()">${lang.close}</button>
             `;
             document.body.appendChild(editor);
         }
 
         function deleteRecord(id) {
-            if(confirm('確定刪除此記錄？')) {
+            if(confirm(translations[currentLanguage].confirmDelete)) {
                 records = records.filter(r => r.id !== id);
                 saveData();
                 renderTable();
@@ -381,6 +637,22 @@
             // Update the summary display
             document.getElementById('totalConsumption').textContent = `$${totalConsumption}`;
             document.getElementById('remainingCoupons').textContent = `$${remainingCoupons}`;
+        }
+
+        function toggleFilter() {
+            showOnlyValid = !showOnlyValid;
+            const filterBtn = document.getElementById('filterBtn');
+            const filterText = document.getElementById('filterText');
+            
+            if (showOnlyValid) {
+                filterBtn.classList.add('active');
+                filterText.textContent = currentLanguage === 'zh' ? '顯示全部' : 'Show All';
+            } else {
+                filterBtn.classList.remove('active');
+                filterText.textContent = currentLanguage === 'zh' ? '顯示未到期' : 'Show Valid Only';
+            }
+            
+            renderTable();
         }
 
         // 初始化
