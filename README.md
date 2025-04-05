@@ -15,3 +15,5 @@ Revise to Responsive Web Design
 v3:
 Add group function
 Update the total amount and remain logic for selected group
+Add how to use
+Add one click delete all expired record

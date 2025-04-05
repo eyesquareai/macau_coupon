@@ -311,13 +311,79 @@
                 justify-content: center;
             }
         }
+        /* 新增功能介紹彈窗樣式 */
+        .help-btn {
+            background: #2196F3;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .help-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .help-modal.active {
+            display: block;
+        }
+        .help-section {
+            margin-bottom: 15px;
+        }
+        .help-section h4 {
+            margin-top: 10px;
+            margin-bottom: 5px;
+            color: #2196F3;
+        }
+        .delete-expired-btn {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        /* 響應式調整 */
+        @media (max-width: 600px) {
+            .header-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 5px;
+                justify-content: flex-end;
+            }
+            .header-buttons button {
+                font-size: 0.9rem;
+                padding: 6px 12px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="header-container">
         <div class="header-top">
             <h1 class="header-title" id="appTitle">消費券記錄App</h1>
-            <button class="lang-switch" onclick="toggleLanguage()">English</button>
+            <div class="header-buttons">
+                <button class="help-btn" onclick="toggleHelpModal()">
+                    <i class="fas fa-question-circle"></i>
+                    <span id="helpBtnText">功能介紹</span>
+                </button>
+                <button class="lang-switch" onclick="toggleLanguage()">English</button>
+            </div>
         </div>
         <div class="summary-container">
             <div class="summary-item">
@@ -345,7 +411,39 @@
                 <i class="fas fa-filter"></i>
                 <span id="filterText">顯示未到期</span>
             </button>
+            <button class="delete-expired-btn" onclick="promptDeleteExpired()">
+                <i class="fas fa-trash-alt"></i>
+                <span id="deleteExpiredText">刪除過期</span>
+            </button>
         </div>
+    </div>
+
+    <!-- 功能介紹模態框 -->
+    <div class="help-modal" id="helpModal">
+        <h3 id="helpModalTitle">功能介紹</h3>
+        <div class="help-content">
+            <div class="help-section">
+                <h4 id="basicUsageTitle">基本使用</h4>
+                <p id="basicUsageContent">點擊"快速新增"按鈕添加新的消費券記錄，選擇支付渠道後可設置不同面額的消費券。</p>
+            </div>
+            <div class="help-section">
+                <h4 id="groupingTitle">分組功能</h4>
+                <p id="groupingContent">點擊"選取分組"可為新紀錄分配顏色組。點擊記錄旁的編輯按鈕可更改現有記錄的分組。</p>
+            </div>
+            <div class="help-section">
+                <h4 id="filteringTitle">篩選功能</h4>
+                <p id="filteringContent">使用"顯示未到期"按鈕可以篩選出尚未過期的記錄。"顯示所有分組/顯示當前分組"可按分組查看記錄。</p>
+            </div>
+            <div class="help-section">
+                <h4 id="deleteExpiredTitle">刪除過期</h4>
+                <p id="deleteExpiredContent">點擊"刪除過期"按鈕可一次性刪除所有已過期的記錄。</p>
+            </div>
+            <div class="help-section">
+                <h4 id="editingTitle">編輯功能</h4>
+                <p id="editingContent">點擊記錄中的編輯按鈕可編輯消費券數值，雙擊可快速切換消費券的使用狀態。</p>
+            </div>
+        </div>
+        <button onclick="toggleHelpModal()">關閉</button>
     </div>
 
     <div class="group-picker" id="groupPicker">
@@ -472,12 +570,26 @@
                 done: '完成',
                 showAll: '顯示全部',
                 showValidOnly: '顯示未到期',
-                createGroup: '創建分組',
+                createGroup: '選取分組',
                 selectGroupColor: '選擇分組顏色',
                 group: '分組',
                 showAllGroups: '顯示所有分組',
                 showSelectedGroup: '顯示當前分組',
-                editGroup: '編輯分組'
+                editGroup: '編輯分組',
+                helpButton: '功能介紹',
+                deleteExpired: '刪除過期',
+                confirmDeleteExpired: '確定要刪除所有已過期的記錄嗎？',
+                helpModalTitle: '功能介紹',
+                basicUsageTitle: '基本使用',
+                basicUsageContent: '點擊"快速新增"按鈕添加新的消費券記錄，選擇支付渠道後可設置不同面額的消費券。',
+                groupingTitle: '分組功能',
+                groupingContent: '點擊"選取分組"可為新紀錄分配顏色組。點擊記錄旁的編輯按鈕可更改現有記錄的分組。',
+                filteringTitle: '篩選功能',
+                filteringContent: '使用"顯示未到期"按鈕可以篩選出尚未過期的記錄。"顯示所有分組/顯示當前分組"可按分組查看記錄。',
+                deleteExpiredTitle: '刪除過期',
+                deleteExpiredContent: '點擊"刪除過期"按鈕可一次性刪除所有已過期的記錄。',
+                editingTitle: '編輯功能',
+                editingContent: '點擊記錄中的編輯按鈕可編輯消費券數值，雙擊可快速切換消費券的使用狀態。'
             },
             en: {
                 appTitle: 'Macau Coupon Manager',
@@ -508,12 +620,26 @@
                 done: 'Done',
                 showAll: 'Show All',
                 showValidOnly: 'Show Valid Only',
-                createGroup: 'Create Group',
+                createGroup: 'Select Group',
                 selectGroupColor: 'Select Group Color',
                 group: 'Group',
                 showAllGroups: 'Show All Groups',
                 showSelectedGroup: 'Show Current Group',
-                editGroup: 'Edit Group'
+                editGroup: 'Edit Group',
+                helpButton: 'Help',
+                deleteExpired: 'Delete Expired',
+                confirmDeleteExpired: 'Are you sure you want to delete all expired records?',
+                helpModalTitle: 'Features Guide',
+                basicUsageTitle: 'Basic Usage',
+                basicUsageContent: 'Click "Quick Add" button to add new coupon records. After selecting a payment channel, you can set different coupon denominations.',
+                groupingTitle: 'Grouping',
+                groupingContent: 'Click "Select Group" to assign a color group to new records. Click the edit button next to a record to change its group.',
+                filteringTitle: 'Filtering',
+                filteringContent: 'Use "Show Valid Only" to filter out non-expired records. "Show All Groups/Show Current Group" to view records by group.',
+                deleteExpiredTitle: 'Delete Expired',
+                deleteExpiredContent: 'Click "Delete Expired" button to remove all expired records at once.',
+                editingTitle: 'Editing',
+                editingContent: 'Click the edit button in a record to edit coupon values, double-click to quickly toggle coupon usage status.'
             }
         };
 
@@ -545,6 +671,21 @@
             document.getElementById('groupPickerTitle').textContent = lang.selectGroupColor;
             document.getElementById('groupFilterText').textContent = 
                 showAllGroups ? lang.showAllGroups : lang.showSelectedGroup;
+            document.getElementById('helpBtnText').textContent = lang.helpButton;
+            document.getElementById('deleteExpiredText').textContent = lang.deleteExpired;
+            
+            // 更新幫助模態框內容
+            document.getElementById('helpModalTitle').textContent = lang.helpModalTitle;
+            document.getElementById('basicUsageTitle').textContent = lang.basicUsageTitle;
+            document.getElementById('basicUsageContent').textContent = lang.basicUsageContent;
+            document.getElementById('groupingTitle').textContent = lang.groupingTitle;
+            document.getElementById('groupingContent').textContent = lang.groupingContent;
+            document.getElementById('filteringTitle').textContent = lang.filteringTitle;
+            document.getElementById('filteringContent').textContent = lang.filteringContent;
+            document.getElementById('deleteExpiredTitle').textContent = lang.deleteExpiredTitle;
+            document.getElementById('deleteExpiredContent').textContent = lang.deleteExpiredContent;
+            document.getElementById('editingTitle').textContent = lang.editingTitle;
+            document.getElementById('editingContent').textContent = lang.editingContent;
             
             // Update filter button text
             const filterText = document.getElementById('filterText');
@@ -888,6 +1029,38 @@
             renderTable();
             updateSummary();
             closeGroupPicker();
+        }
+
+        // 功能介紹模態框切換
+        function toggleHelpModal() {
+            const helpModal = document.getElementById('helpModal');
+            helpModal.classList.toggle('active');
+        }
+
+        // 刪除過期記錄
+        function promptDeleteExpired() {
+            const lang = translations[currentLanguage];
+            if (confirm(lang.confirmDeleteExpired)) {
+                deleteExpiredRecords();
+            }
+        }
+
+        function deleteExpiredRecords() {
+            const today = new Date();
+            today.setUTCDate(today.getUTCDate());
+            
+            // 過濾出未過期的記錄
+            const newRecords = records.filter(record => {
+                const expiryDate = new Date(record.expiry);
+                return expiryDate >= today;
+            });
+            
+            // 如果有記錄被刪除，更新數據並重新渲染
+            if (newRecords.length < records.length) {
+                records = newRecords;
+                saveData();
+                renderTable();
+            }
         }
 
         // Initialize
