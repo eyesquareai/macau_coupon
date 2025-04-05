@@ -211,6 +211,106 @@
                 align-self: flex-end;
             }
         }
+        /* Group styles */
+        .group-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            border: 2px solid #fff;
+            box-shadow: 0 0 2px rgba(0,0,0,0.2);
+        }
+        .group-color.selected {
+            border: 2px solid #000;
+        }
+        .group-picker {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 1000;
+        }
+        .group-picker.active {
+            display: block;
+        }
+        .color-options {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .group-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .group-btn i {
+            font-size: 14px;
+        }
+        .filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .group-edit-btn {
+            color: #2196F3;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .group-filter-btn {
+            background: #9C27B0;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        /* Coupon amount styles */
+        .coupon-amount {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .coupon-amount.used {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .filter-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filter-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .group-btn, .filter-btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -232,10 +332,32 @@
     </div>
 
     <div class="filter-container">
-        <button class="filter-btn" onclick="toggleFilter()" id="filterBtn">
-            <i class="fas fa-filter"></i>
-            <span id="filterText">顯示未到期</span>
-        </button>
+        <div class="filter-buttons">
+            <button class="group-btn" onclick="showGroupPicker()">
+                <i class="fas fa-layer-group"></i>
+                <span id="groupBtnText">創建分組</span>
+            </button>
+            <button class="group-filter-btn" onclick="toggleGroupFilter()" id="groupFilterBtn">
+                <i class="fas fa-filter"></i>
+                <span id="groupFilterText">顯示所有分組</span>
+            </button>
+            <button class="filter-btn" onclick="toggleFilter()" id="filterBtn">
+                <i class="fas fa-filter"></i>
+                <span id="filterText">顯示未到期</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="group-picker" id="groupPicker">
+        <h3 id="groupPickerTitle">選擇分組顏色</h3>
+        <div class="color-options">
+            <div class="group-color" style="background-color: #FF5733;" onclick="selectGroupColor('#FF5733', event)"></div>
+            <div class="group-color" style="background-color: #33FF57;" onclick="selectGroupColor('#33FF57', event)"></div>
+            <div class="group-color" style="background-color: #3357FF;" onclick="selectGroupColor('#3357FF', event)"></div>
+            <div class="group-color" style="background-color: #F033FF;" onclick="selectGroupColor('#F033FF', event)"></div>
+            <div class="group-color" style="background-color: #FF8333;" onclick="selectGroupColor('#FF8333', event)"></div>
+        </div>
+        <button onclick="closeGroupPicker()">關閉</button>
     </div>
 
     <button class="main-btn" onclick="toggleChannels()" id="quickAddBtn">＋ 快速新增</button>
@@ -255,6 +377,7 @@
         <table>
             <thead>
                 <tr>
+                    <th id="groupHeader">分組</th>
                     <th id="dateHeader">輸入日期</th>
                     <th id="channelHeader">支付渠道</th>
                     <th id="coupon1Header">券1</th>
@@ -282,8 +405,11 @@
 
     <script>
         let records = JSON.parse(localStorage.getItem('coupons')) || [];
-        let currentLanguage = 'zh'; // Default language
-        let showOnlyValid = false; // Track filter state
+        let currentLanguage = 'zh';
+        let showOnlyValid = false;
+        let selectedGroupColor = null;
+        let showAllGroups = true;
+        const DEFAULT_GROUP_COLOR = '#FF5733'; // Default color for existing records
 
         // Add channel mapping for backward compatibility
         const channelMapping = {
@@ -305,6 +431,15 @@
             return record;
         });
         saveData(); // Save the updated records
+
+        // Process existing records to add default group color if missing
+        records = records.map(record => {
+            if (!record.groupColor) {
+                record.groupColor = DEFAULT_GROUP_COLOR;
+            }
+            return record;
+        });
+        saveData();
 
         // Language translations
         const translations = {
@@ -336,7 +471,13 @@
                 setCoupons: '設定優惠券',
                 done: '完成',
                 showAll: '顯示全部',
-                showValidOnly: '顯示未到期'
+                showValidOnly: '顯示未到期',
+                createGroup: '創建分組',
+                selectGroupColor: '選擇分組顏色',
+                group: '分組',
+                showAllGroups: '顯示所有分組',
+                showSelectedGroup: '顯示當前分組',
+                editGroup: '編輯分組'
             },
             en: {
                 appTitle: 'Macau Coupon Manager',
@@ -366,7 +507,13 @@
                 setCoupons: 'Set Coupons',
                 done: 'Done',
                 showAll: 'Show All',
-                showValidOnly: 'Show Valid Only'
+                showValidOnly: 'Show Valid Only',
+                createGroup: 'Create Group',
+                selectGroupColor: 'Select Group Color',
+                group: 'Group',
+                showAllGroups: 'Show All Groups',
+                showSelectedGroup: 'Show Current Group',
+                editGroup: 'Edit Group'
             }
         };
 
@@ -393,6 +540,11 @@
             document.getElementById('expiryHeader').textContent = lang.expiry;
             document.getElementById('statusHeader').textContent = lang.status;
             document.getElementById('actionHeader').textContent = lang.action;
+            document.getElementById('groupHeader').textContent = lang.group;
+            document.getElementById('groupBtnText').textContent = lang.createGroup;
+            document.getElementById('groupPickerTitle').textContent = lang.selectGroupColor;
+            document.getElementById('groupFilterText').textContent = 
+                showAllGroups ? lang.showAllGroups : lang.showSelectedGroup;
             
             // Update filter button text
             const filterText = document.getElementById('filterText');
@@ -400,7 +552,6 @@
                 ? (currentLanguage === 'zh' ? '顯示全部' : 'Show All')
                 : (currentLanguage === 'zh' ? '顯示未到期' : 'Show Valid Only');
 
-            // Re-render table to update status texts
             renderTable();
         }
 
@@ -427,7 +578,8 @@
                 dateAdded: today.toISOString().split('T')[0],
                 coupons: [{ value: null, status: '未使用' }, { value: null, status: '未使用' }, { value: null, status: '未使用' }],
                 expiry: getNextSunday(),
-                total: 0
+                total: 0,
+                groupColor: selectedGroupColor
             };
             records.push(newRecord);
             saveData();
@@ -515,15 +667,12 @@
             const tbody = document.getElementById('recordsBody');
             const lang = translations[currentLanguage];
             
-            // Filter records if needed
-            const filteredRecords = showOnlyValid 
-                ? records.filter(record => {
-                    const expiryDate = new Date(record.expiry);
-                    const now = new Date();
-                    now.setUTCDate(now.getUTCDate());
-                    return expiryDate >= now;
-                })
-                : records;
+            // Filter records based on validity and group color
+            const filteredRecords = records.filter(record => {
+                const isValid = !showOnlyValid || new Date(record.expiry) >= new Date();
+                const isInGroup = showAllGroups || record.groupColor === selectedGroupColor;
+                return isValid && isInGroup;
+            });
             
             tbody.innerHTML = filteredRecords.map(record => {
                 const expiryDate = new Date(record.expiry);
@@ -541,11 +690,18 @@
 
                 return `
                     <tr>
+                        <td>
+                            <div class="group-color" style="background-color: ${record.groupColor};"></div>
+                            <span class="group-edit-btn" onclick="editGroupColor(${record.id})">✎</span>
+                        </td>
                         <td>${dateAdded}</td>
                         <td>${channelDisplay}</td>
                         ${record.coupons.map((c, i) => `
-                            <td ondblclick="toggleCouponStatus(${record.id}, ${i})" style="${c.status === lang.used ? 'text-decoration: line-through;' : ''}">
-                                ${c.value !== null ? c.value : '-'}${c.status === lang.used ? ` (${c.status})` : ''}
+                            <td ondblclick="toggleCouponStatus(${record.id}, ${i})">
+                                <span class="coupon-amount ${c.status === lang.used ? 'used' : ''}">
+                                    ${c.value !== null ? c.value : '-'}
+                                </span>
+                                ${c.status === lang.used ? ` (${c.status})` : ''}
                                 <span class="edit-btn" onclick="editSingleCoupon(${record.id}, ${i})">${lang.edit}</span>
                             </td>
                         `).join('')}
@@ -621,13 +777,17 @@
             renderTable();
         }
         
-        // New function to update the summary section
         function updateSummary() {
+            // Filter records based on group selection
+            const filteredRecords = showAllGroups 
+                ? records 
+                : records.filter(record => record.groupColor === selectedGroupColor);
+
             // Calculate total consumption (sum of all record totals)
-            const totalConsumption = records.reduce((sum, record) => sum + record.total, 0);
+            const totalConsumption = filteredRecords.reduce((sum, record) => sum + record.total, 0);
             
             // Calculate remaining coupon amount (sum of all unused coupons)
-            const remainingCoupons = records.reduce((sum, record) => {
+            const remainingCoupons = filteredRecords.reduce((sum, record) => {
                 return sum + record.coupons.reduce((couponSum, coupon) => {
                     // Only count unused coupons and use their actual value
                     return coupon.status === '未使用' && coupon.value !== null ? couponSum + coupon.value : couponSum;
@@ -655,7 +815,82 @@
             renderTable();
         }
 
-        // 初始化
+        function showGroupPicker() {
+            document.getElementById('groupPicker').classList.add('active');
+        }
+
+        function closeGroupPicker() {
+            document.getElementById('groupPicker').classList.remove('active');
+        }
+
+        function toggleGroupFilter() {
+            showAllGroups = !showAllGroups;
+            const groupFilterBtn = document.getElementById('groupFilterBtn');
+            const groupFilterText = document.getElementById('groupFilterText');
+            
+            if (showAllGroups) {
+                groupFilterBtn.classList.remove('active');
+                groupFilterText.textContent = currentLanguage === 'zh' ? '顯示所有分組' : 'Show All Groups';
+            } else {
+                groupFilterBtn.classList.add('active');
+                groupFilterText.textContent = currentLanguage === 'zh' ? '顯示當前分組' : 'Show Current Group';
+            }
+            
+            renderTable();
+            updateSummary(); // Update summary when group filter changes
+        }
+
+        function editGroupColor(recordId) {
+            const record = records.find(r => r.id === recordId);
+            if (record) {
+                selectedGroupColor = record.groupColor;
+                showGroupPicker();
+                // Store the record ID to update after color selection
+                document.getElementById('groupPicker').dataset.recordId = recordId;
+                
+                // Highlight the currently selected color
+                document.querySelectorAll('.group-picker .group-color').forEach(el => {
+                    el.classList.remove('selected');
+                    if (el.style.backgroundColor === record.groupColor) {
+                        el.classList.add('selected');
+                    }
+                });
+            }
+        }
+
+        function selectGroupColor(color, event) {
+            const recordId = document.getElementById('groupPicker').dataset.recordId;
+            
+            if (recordId) {
+                // Convert recordId from string to number
+                const recordIdNum = parseInt(recordId);
+                // Update existing record's group color
+                const record = records.find(r => r.id === recordIdNum);
+                if (record) {
+                    record.groupColor = color;
+                    saveData();
+                }
+                document.getElementById('groupPicker').dataset.recordId = '';
+            } else {
+                // Set color for new records
+                selectedGroupColor = color;
+            }
+            
+            // Update UI to show selected color
+            document.querySelectorAll('.group-color').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            if (event && event.target) {
+                event.target.classList.add('selected');
+            }
+            
+            renderTable();
+            updateSummary();
+            closeGroupPicker();
+        }
+
+        // Initialize
         renderTable();
     </script>
 </body>

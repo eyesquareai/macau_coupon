@@ -11,3 +11,7 @@ v2:
 Add switch language
 Add display valid or all record
 Revise to Responsive Web Design
+
+v3:
+Add group function
+Update the total amount and remain logic for selected group
