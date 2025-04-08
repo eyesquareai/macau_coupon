@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>澳門消費券管家</title>
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-QCX3G9KSPC"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-QCX3G9KSPC');
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
@@ -919,10 +927,16 @@
         }
         
         function updateSummary() {
-            // Filter records based on group selection
-            const filteredRecords = showAllGroups 
+            // Filter records based on group selection and exclude expired records
+            const filteredRecords = (showAllGroups 
                 ? records 
-                : records.filter(record => record.groupColor === selectedGroupColor);
+                : records.filter(record => record.groupColor === selectedGroupColor))
+                .filter(record => {
+                    const expiryDate = new Date(record.expiry);
+                    const today = new Date();
+                    today.setUTCDate(today.getUTCDate());
+                    return expiryDate >= today;
+                });
 
             // Calculate total consumption (sum of all record totals)
             const totalConsumption = filteredRecords.reduce((sum, record) => sum + record.total, 0);
