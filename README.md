@@ -17,3 +17,10 @@ Add group function
 Update the total amount and remain logic for selected group
 Add how to use
 Add one click delete all expired record
+
+v4:
+fix the bug of expired coupon count in total spend and remain coupon amount
+
+v5:
+add one click all redeem button
+add double click channel, that row all redeem
