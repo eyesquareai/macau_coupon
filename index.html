@@ -1150,11 +1150,22 @@
             
             if (expiryDate < today) return; // Skip if record is expired
             
-            const allUnused = record.coupons.every(c => c.status === '未使用');
+            // Check if all coupons are used
+            const allUsed = record.coupons.every(c => c.status === '已使用');
             
-            record.coupons.forEach(coupon => {
-                coupon.status = allUnused ? '已使用' : '未使用';
-            });
+            if (allUsed) {
+                // If all coupons are used, change all to unused
+                record.coupons.forEach(coupon => {
+                    coupon.status = '未使用';
+                });
+            } else {
+                // Otherwise, only change unused coupons to used
+                record.coupons.forEach(coupon => {
+                    if (coupon.status === '未使用') {
+                        coupon.status = '已使用';
+                    }
+                });
+            }
             
             // Recalculate total for the record
             record.total = record.coupons.reduce((sum, c) => {
