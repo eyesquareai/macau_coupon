@@ -379,17 +379,6 @@
                 padding: 6px 12px;
             }
         }
-        .mark-all-used-btn {
-            background: #FF9800;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
     </style>
 </head>
 <body>
@@ -434,10 +423,6 @@
                 <i class="fas fa-trash-alt"></i>
                 <span id="deleteExpiredText">刪除過期</span>
             </button>
-            <button class="mark-all-used-btn" onclick="promptMarkAllUsed()">
-                <i class="fas fa-check-double"></i>
-                <span id="markAllUsedText">一鍵已使用</span>
-            </button>
         </div>
     </div>
 
@@ -463,11 +448,7 @@
             </div>
             <div class="help-section">
                 <h4 id="editingTitle">編輯功能</h4>
-                <p id="editingContent">點擊記錄中的編輯按鈕可編輯消費券數值，雙擊可快速切換消費券的使用狀態。雙擊支付渠道可快速切換該記錄中所有消費券的使用狀態。</p>
-            </div>
-            <div class="help-section">
-                <h4 id="markAllUsedTitle">一鍵已使用</h4>
-                <p id="markAllUsedContent">點擊"一鍵已使用"按鈕可將所有未過期且未使用的消費券標記為已使用狀態。</p>
+                <p id="editingContent">點擊記錄中的編輯按鈕可編輯消費券數值，雙擊可快速切換消費券的使用狀態。</p>
             </div>
         </div>
         <button onclick="toggleHelpModal()">關閉</button>
@@ -616,11 +597,7 @@
                 deleteExpiredTitle: '刪除過期',
                 deleteExpiredContent: '點擊"刪除過期"按鈕可一次性刪除所有已過期的記錄。',
                 editingTitle: '編輯功能',
-                editingContent: '點擊記錄中的編輯按鈕可編輯消費券數值，雙擊可快速切換消費券的使用狀態。雙擊支付渠道可快速切換該記錄中所有消費券的使用狀態。',
-                markAllUsed: '一鍵已使用',
-                confirmMarkAllUsed: '確定要將所有未過期且未使用的消費券標記為已使用嗎？',
-                markAllUsedTitle: '一鍵已使用',
-                markAllUsedContent: '點擊"一鍵已使用"按鈕可將所有未過期且未使用的消費券標記為已使用狀態。'
+                editingContent: '點擊記錄中的編輯按鈕可編輯消費券數值，雙擊可快速切換消費券的使用狀態。'
             },
             en: {
                 appTitle: 'Macau Coupon Manager',
@@ -670,11 +647,7 @@
                 deleteExpiredTitle: 'Delete Expired',
                 deleteExpiredContent: 'Click "Delete Expired" button to remove all expired records at once.',
                 editingTitle: 'Editing',
-                editingContent: 'Click the edit button in a record to edit coupon values, double-click to quickly toggle coupon usage status. Double-click on the payment channel to toggle all coupons status in that record.',
-                markAllUsed: 'Mark All Used',
-                confirmMarkAllUsed: 'Are you sure you want to mark all non-expired and unused coupons as used?',
-                markAllUsedTitle: 'Mark All Used',
-                markAllUsedContent: 'Click "Mark All Used" button to mark all non-expired and unused coupons as used.'
+                editingContent: 'Click the edit button in a record to edit coupon values, double-click to quickly toggle coupon usage status.'
             }
         };
 
@@ -871,7 +844,7 @@
                             <span class="group-edit-btn" onclick="editGroupColor(${record.id})">✎</span>
                         </td>
                         <td>${dateAdded}</td>
-                        <td ondblclick="toggleAllCouponsStatus(${record.id})">${channelDisplay}</td>
+                        <td>${channelDisplay}</td>
                         ${record.coupons.map((c, i) => `
                             <td ondblclick="toggleCouponStatus(${record.id}, ${i})">
                                 <span class="coupon-amount ${c.status === lang.used ? 'used' : ''}">
@@ -1102,67 +1075,6 @@
                 saveData();
                 renderTable();
             }
-        }
-
-        function promptMarkAllUsed() {
-            const lang = translations[currentLanguage];
-            if (confirm(lang.confirmMarkAllUsed)) {
-                markAllUsed();
-            }
-        }
-
-        function markAllUsed() {
-            const today = new Date();
-            today.setUTCDate(today.getUTCDate());
-            
-            let hasChanges = false;
-            
-            records.forEach(record => {
-                const expiryDate = new Date(record.expiry);
-                if (expiryDate >= today) { // Only process non-expired records
-                    record.coupons.forEach(coupon => {
-                        if (coupon.status === '未使用') {
-                            coupon.status = '已使用';
-                            hasChanges = true;
-                        }
-                    });
-                    
-                    // Recalculate total for the record
-                    record.total = record.coupons.reduce((sum, c) => {
-                        return c.status === '未使用' ? sum + (c.value || 0) : sum;
-                    }, 0) * 3;
-                }
-            });
-            
-            if (hasChanges) {
-                saveData();
-                renderTable();
-            }
-        }
-
-        function toggleAllCouponsStatus(recordId) {
-            const record = records.find(r => r.id === recordId);
-            if (!record) return;
-            
-            const today = new Date();
-            today.setUTCDate(today.getUTCDate());
-            const expiryDate = new Date(record.expiry);
-            
-            if (expiryDate < today) return; // Skip if record is expired
-            
-            const allUnused = record.coupons.every(c => c.status === '未使用');
-            
-            record.coupons.forEach(coupon => {
-                coupon.status = allUnused ? '已使用' : '未使用';
-            });
-            
-            // Recalculate total for the record
-            record.total = record.coupons.reduce((sum, c) => {
-                return c.status === '未使用' ? sum + (c.value || 0) : sum;
-            }, 0) * 3;
-            
-            saveData();
-            renderTable();
         }
 
         // Initialize
