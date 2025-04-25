@@ -24,3 +24,8 @@ fix the bug of expired coupon count in total spend and remain coupon amount
 v5:
 add one click all redeem button
 add double click channel, that row all redeem
+
+v6:
+add optimal consumption plan feature for calculating the best combination of coupons based on total consumption amount
+optimize coupon usage suggestion with visual grouping by payment channel
+show the exact breakdown of consumption amount that can use coupons and without coupon amount

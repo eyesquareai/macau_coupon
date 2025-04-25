@@ -390,6 +390,43 @@
             align-items: center;
             gap: 5px;
         }
+        .optimal-plan-btn {
+            background: #009688;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .plan-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .plan-result {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .plan-highlight {
+            font-weight: bold;
+            color: #009688;
+        }
     </style>
 </head>
 <body>
@@ -408,11 +445,11 @@
             <div class="summary-item">
                 <span class="summary-label" id="totalConsumptionLabel">總消費額</span>
                 <span id="totalConsumption" class="summary-value">$0</span>
-            </div>
+        </div>
             <div class="summary-item">
                 <span class="summary-label" id="remainingCouponsLabel">剩餘消費券金額</span>
                 <span id="remainingCoupons" class="summary-value">$0</span>
-            </div>
+    </div>
         </div>
     </div>
 
@@ -437,6 +474,10 @@
             <button class="mark-all-used-btn" onclick="promptMarkAllUsed()">
                 <i class="fas fa-check-double"></i>
                 <span id="markAllUsedText">一鍵已使用</span>
+            </button>
+            <button class="optimal-plan-btn" onclick="showOptimalPlanModal()">
+                <i class="fas fa-calculator"></i>
+                <span id="optimalPlanText">最優消費方案</span>
             </button>
         </div>
     </div>
@@ -469,6 +510,10 @@
                 <h4 id="markAllUsedTitle">一鍵已使用</h4>
                 <p id="markAllUsedContent">點擊"一鍵已使用"按鈕可將所有未過期且未使用的消費券標記為已使用狀態。</p>
             </div>
+            <div class="help-section">
+                <h4 id="optimalPlanTitle">最優消費方案</h4>
+                <p id="optimalPlanContent">輸入總消費額，系統將計算出最接近的消費券組合方案，顯示可使用消費券總額、無法使用消費券金額以及各渠道的消費券使用明細。</p>
+            </div>
         </div>
         <button onclick="toggleHelpModal()">關閉</button>
     </div>
@@ -499,9 +544,9 @@
     </div>
 
     <div class="table-container">
-        <table>
-            <thead>
-                <tr>
+    <table>
+        <thead>
+            <tr>
                     <th id="groupHeader">分組</th>
                     <th id="dateHeader">輸入日期</th>
                     <th id="channelHeader">支付渠道</th>
@@ -512,10 +557,10 @@
                     <th id="expiryHeader">過期日</th>
                     <th id="statusHeader">狀態</th>
                     <th id="actionHeader">操作</th>
-                </tr>
-            </thead>
-            <tbody id="recordsBody"></tbody>
-        </table>
+            </tr>
+        </thead>
+        <tbody id="recordsBody"></tbody>
+    </table>
     </div>
 
     <div class="footer">
@@ -528,10 +573,24 @@
 
     </div>
 
+    <!-- 最優消費方案模態框 -->
+    <div class="plan-modal" id="planModal" style="display: none;">
+        <h3 id="planModalTitle">最優消費方案</h3>
+        <div>
+            <label for="consumptionAmount" id="inputAmountLabel">請輸入總消費額</label>
+            <div style="display: flex; gap: 10px; margin: 10px 0;">
+                <input type="number" id="consumptionAmount" style="flex: 1; padding: 8px;" min="1">
+                <button onclick="calculateOptimalPlan()" id="calculateBtn" style="padding: 8px 16px; background: #009688; color: white; border: none; border-radius: 5px; cursor: pointer;">計算</button>
+            </div>
+        </div>
+        <div class="plan-result" id="planResult" style="display: none;"></div>
+        <button onclick="closePlanModal()" style="margin-top: 15px; padding: 8px 16px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">關閉</button>
+    </div>
+
     <script>
         let records = JSON.parse(localStorage.getItem('coupons')) || [];
         let currentLanguage = 'zh';
-        let showOnlyValid = false;
+        let showOnlyValid = true;
         let selectedGroupColor = null;
         let showAllGroups = true;
         const DEFAULT_GROUP_COLOR = '#FF5733'; // Default color for existing records
@@ -620,7 +679,21 @@
                 markAllUsed: '一鍵已使用',
                 confirmMarkAllUsed: '確定要將所有未過期且未使用的消費券標記為已使用嗎？',
                 markAllUsedTitle: '一鍵已使用',
-                markAllUsedContent: '點擊"一鍵已使用"按鈕可將所有未過期且未使用的消費券標記為已使用狀態。'
+                markAllUsedContent: '點擊"一鍵已使用"按鈕可將所有未過期且未使用的消費券標記為已使用狀態。',
+                optimalPlan: '最優消費方案',
+                inputAmount: '請輸入總消費額',
+                calculate: '計算',
+                optimalPlanResult: '最優消費方案',
+                noSolution: '沒有合適的消費方案',
+                totalSelected: '選中的消費券總消費額',
+                selectedCoupons: '選中的消費券',
+                couponFrom: '來自',
+                couponValue: '消費券金額',
+                optimalPlanTitle: '最優消費方案',
+                optimalPlanContent: '輸入總消費額，系統將計算出最接近的消費券組合方案，顯示可使用消費券總額、無法使用消費券金額以及各渠道的消費券使用明細。',
+                channelTotal: '此渠道支付總額',
+                selfPay: '無法使用消費券金額',
+                availableAmount: '可使用消費券總額'
             },
             en: {
                 appTitle: 'Macau Coupon Manager',
@@ -674,7 +747,21 @@
                 markAllUsed: 'Mark All Used',
                 confirmMarkAllUsed: 'Are you sure you want to mark all non-expired and unused coupons as used?',
                 markAllUsedTitle: 'Mark All Used',
-                markAllUsedContent: 'Click "Mark All Used" button to mark all non-expired and unused coupons as used.'
+                markAllUsedContent: 'Click "Mark All Used" button to mark all non-expired and unused coupons as used.',
+                optimalPlan: 'Optimal Plan',
+                inputAmount: 'Enter total consumption amount',
+                calculate: 'Calculate',
+                optimalPlanResult: 'Optimal Consumption Plan',
+                noSolution: 'No suitable consumption plan found',
+                totalSelected: 'Total Selected Amount',
+                selectedCoupons: 'Selected Coupons',
+                couponFrom: 'From',
+                couponValue: 'Value',
+                optimalPlanTitle: 'Optimal Consumption Plan',
+                optimalPlanContent: 'Enter your total consumption amount, and the system will calculate the best combination of coupons, showing the available coupon amount, the amount that cannot be covered by coupons, and detailed usage by payment channel.',
+                channelTotal: 'Total Payment from this channel',
+                selfPay: "Without coupon amount",
+                availableAmount: 'Available coupon amount'
             }
         };
 
@@ -728,6 +815,14 @@
                 ? (currentLanguage === 'zh' ? '顯示全部' : 'Show All')
                 : (currentLanguage === 'zh' ? '顯示未到期' : 'Show Valid Only');
 
+            // Update optimal plan modal content
+            document.getElementById('planModalTitle').textContent = lang.optimalPlanTitle;
+            document.getElementById('inputAmountLabel').textContent = lang.inputAmount;
+            document.getElementById('calculateBtn').textContent = lang.calculate;
+            document.getElementById('optimalPlanTitle').textContent = lang.optimalPlanTitle;
+            document.getElementById('optimalPlanContent').textContent = lang.optimalPlanContent;
+            document.getElementById('optimalPlanText').textContent = lang.optimalPlan;
+            
             renderTable();
         }
 
@@ -829,7 +924,7 @@
             // Recalculate total only for "未使用" coupons
             record.total = record.coupons.reduce((sum, c) => {
                 return c.status === '未使用' ? sum + (c.value || 0) : sum;
-            }, 0) * 3; // Multiply the sum by 3
+            }, 0) * 3;
 
             // Update button highlighting
             updateButtonHighlighting(recordId, index, value);
@@ -947,7 +1042,7 @@
             // Recalculate total - only counting "未使用" coupons
             record.total = record.coupons.reduce((sum, c) => {
                 return c.status === '未使用' ? sum + (c.value || 0) : sum; // If '已使用', value is treated as 0
-            }, 0) * 3; // Multiply the sum by 3
+            }, 0) * 3;
             
             saveData(); // Save to local storage
             renderTable();
@@ -1176,8 +1271,190 @@
             renderTable();
         }
 
+        // 最優消費方案相關功能
+        function showOptimalPlanModal() {
+            document.getElementById('planModal').style.display = 'block';
+            document.getElementById('planResult').style.display = 'none';
+            document.getElementById('consumptionAmount').value = '';
+        }
+        
+        function closePlanModal() {
+            document.getElementById('planModal').style.display = 'none';
+        }
+        
+        function calculateOptimalPlan() {
+            const amount = parseInt(document.getElementById('consumptionAmount').value);
+            if (isNaN(amount) || amount <= 0) return;
+            
+            // 計算最大可用的消費券總金額（不能超過總消費額除以3）
+            const maxCouponAmount = Math.floor(amount / 3);
+            
+            // 獲取所有未過期且未使用的消費券
+            const today = new Date();
+            today.setUTCDate(today.getUTCDate());
+            
+            const availableCoupons = [];
+            
+            records.forEach(record => {
+                const expiryDate = new Date(record.expiry);
+                if (expiryDate >= today) {
+                    const channelDisplay = currentLanguage === 'zh' ? record.channel : record.channelEn;
+                    record.coupons.forEach((coupon, index) => {
+                        if (coupon.status === '未使用' && coupon.value !== null && coupon.value > 0) {
+                            availableCoupons.push({
+                                recordId: record.id,
+                                couponIndex: index,
+                                value: coupon.value,
+                                channel: channelDisplay,
+                                date: record.dateAdded
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // 如果沒有可用的消費券，顯示提示
+            if (availableCoupons.length === 0) {
+                showNoSolutionMessage();
+                return;
+            }
+            
+            // 計算最優組合
+            const result = findOptimalCombination(availableCoupons, maxCouponAmount);
+            
+            // 顯示結果
+            displayOptimalPlan(result, amount);
+        }
+        
+        function findOptimalCombination(coupons, targetAmount) {
+            // 使用動態規劃求解背包問題
+            // 目標是找到最大不超過targetAmount的組合
+            
+            // 先按渠道分組，這樣可以在之後的結果顯示中按渠道排序
+            const couponsByChannel = {};
+            coupons.forEach(coupon => {
+                if (!couponsByChannel[coupon.channel]) {
+                    couponsByChannel[coupon.channel] = [];
+                }
+                couponsByChannel[coupon.channel].push(coupon);
+            });
+            
+            // 將coupons按面額排序（降序）
+            coupons.sort((a, b) => b.value - a.value);
+            
+            // 創建一個二維表格，表示前i個物品能達到金額j的最大價值
+            const dp = Array(coupons.length + 1).fill().map(() => Array(targetAmount + 1).fill(0));
+            const selected = Array(coupons.length + 1).fill().map(() => Array(targetAmount + 1).fill(false));
+            
+            // 填充dp表格
+            for (let i = 1; i <= coupons.length; i++) {
+                const coupon = coupons[i-1];
+                for (let j = 0; j <= targetAmount; j++) {
+                    // 不選當前物品
+                    dp[i][j] = dp[i-1][j];
+                    selected[i][j] = false;
+                    
+                    // 選當前物品（如果可以）
+                    if (j >= coupon.value && dp[i-1][j-coupon.value] + coupon.value > dp[i][j]) {
+                        dp[i][j] = dp[i-1][j-coupon.value] + coupon.value;
+                        selected[i][j] = true;
+                    }
+                }
+            }
+            
+            // 找出不超過targetAmount的最大價值
+            let bestSum = dp[coupons.length][targetAmount];
+            
+            // 回溯找出選中的物品
+            const selectedItems = [];
+            let currentSum = targetAmount;
+            
+            for (let i = coupons.length; i > 0; i--) {
+                if (selected[i][currentSum]) {
+                    selectedItems.push(coupons[i-1]);
+                    currentSum -= coupons[i-1].value;
+                }
+            }
+            
+            // 按渠道分組並排序結果
+            const groupedItems = {};
+            let totalConsumptionAmount = 0;
+            
+            selectedItems.forEach(item => {
+                if (!groupedItems[item.channel]) {
+                    groupedItems[item.channel] = [];
+                }
+                groupedItems[item.channel].push(item);
+                totalConsumptionAmount += item.value * 3; // 消費金額是券面額的3倍
+            });
+            
+            // 計算每個渠道的消費券總額
+            const channelTotals = {};
+            for (const channel in groupedItems) {
+                channelTotals[channel] = groupedItems[channel].reduce((sum, item) => sum + item.value, 0)*3;
+            }
+            
+            return {
+                couponsTotal: bestSum, // 消費券金額
+                total: totalConsumptionAmount, // 總消費額
+                items: selectedItems,
+                groupedItems: groupedItems,
+                channelTotals: channelTotals
+            };
+        }
+        
+        function displayOptimalPlan(result, totalAmount) {
+            const lang = translations[currentLanguage];
+            const resultDiv = document.getElementById('planResult');
+            resultDiv.style.display = 'block';
+            
+            if (result.items.length === 0) {
+                showNoSolutionMessage();
+                return;
+            }
+            
+            // 計算自付金額
+            const selfPayAmount = totalAmount - result.total;
+            
+            let html = `<h4>${lang.optimalPlanResult}</h4>`;
+            html += `<p>${lang.inputAmount}: <span class="plan-highlight">$${totalAmount}</span></p>`;
+            html += `<p>${lang.availableAmount}: <span class="plan-highlight">$${result.total}</span> (${lang.couponValue}: $${result.couponsTotal})</p>`;
+            html += `<p>${lang.selfPay}: <span class="plan-highlight">$${selfPayAmount}</span></p>`;
+            html += `<p>${lang.selectedCoupons}:</p>`;
+            
+            // 按渠道分組顯示
+            for (const channel in result.groupedItems) {
+                html += `<div style="margin-top: 10px;">
+                           <strong>${channel}</strong> 
+                           <span style="margin-left: 10px; color: #009688;">
+                             (${lang.channelTotal}: $${result.channelTotals[channel]})
+                           </span>
+                         </div>`;
+                html += '<ul>';
+                
+                result.groupedItems[channel].forEach(item => {
+                    html += `<li>${lang.couponValue}: <span class="plan-highlight">$${item.value}</span> (${item.date})</li>`;
+                });
+                
+                html += '</ul>';
+            }
+            
+            resultDiv.innerHTML = html;
+        }
+        
+        function showNoSolutionMessage() {
+            const lang = translations[currentLanguage];
+            const resultDiv = document.getElementById('planResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<p>${lang.noSolution}</p>`;
+        }
+
         // Initialize
         renderTable();
+        
+        // Set initial state for filter button
+        document.getElementById('filterBtn').classList.add('active');
+        document.getElementById('filterText').textContent = currentLanguage === 'zh' ? '顯示全部' : 'Show All';
     </script>
 </body>
 </html>
