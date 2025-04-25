@@ -940,7 +940,13 @@
             
             // Filter records based on validity and group color
             const filteredRecords = records.filter(record => {
-                const isValid = !showOnlyValid || new Date(record.expiry) >= new Date();
+                const expiryDate = new Date(record.expiry);
+                const now = new Date();
+                now.setUTCDate(now.getUTCDate());
+                const diffTime = expiryDate - now;
+                const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24)) + 1;
+                
+                const isValid = !showOnlyValid || diffDays > 0;
                 const isInGroup = showAllGroups || record.groupColor === selectedGroupColor;
                 return isValid && isInGroup;
             });
@@ -950,9 +956,9 @@
                 const now = new Date();
                 now.setUTCDate(now.getUTCDate());
                 const diffTime = expiryDate - now;
-                const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24));
+                const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24)) + 1;
 
-                let status = diffDays < 0 ? lang.expired : 
+                let status = diffDays <= 0 ? lang.expired : 
                             diffDays <= 7 ? `${lang.daysLeft}${diffDays}${lang.days}` : 
                             lang.valid;
 
@@ -1057,7 +1063,8 @@
                     const expiryDate = new Date(record.expiry);
                     const today = new Date();
                     today.setUTCDate(today.getUTCDate());
-                    return expiryDate >= today;
+                    // Include records that expire today or later
+                    return expiryDate >= today || expiryDate.toDateString() === today.toDateString();
                 });
 
             // Calculate total consumption (sum of all record totals)
@@ -1242,8 +1249,10 @@
             const today = new Date();
             today.setUTCDate(today.getUTCDate());
             const expiryDate = new Date(record.expiry);
+            const diffTime = expiryDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24)) + 1;
             
-            if (expiryDate < today) return; // Skip if record is expired
+            if (diffDays <= 0) return; // Skip if record is expired
             
             // Check if all coupons are used
             const allUsed = record.coupons.every(c => c.status === '已使用');
