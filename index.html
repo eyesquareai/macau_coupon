@@ -571,6 +571,14 @@
                 <button onclick="calculateOptimalPlan()" id="calculateBtn" style="padding: 8px 16px; background: #009688; color: white; border: none; border-radius: 5px; cursor: pointer;">計算</button>
             </div>
         </div>
+        <div style="margin: 10px 0; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center;">
+                <span id="planAllGroupsOption" data-color="all" onclick="selectPlanGroupColor(event)" style="font-weight: bold; cursor: pointer; margin-right: 15px; padding: 5px;" class="selected">所有分組</span>
+                <div class="color-options" id="planGroupColors" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <!-- 颜色选项将在JavaScript中动态添加 -->
+                </div>
+            </div>
+        </div>
         <div class="plan-result" id="planResult" style="display: none;"></div>
         <button onclick="closePlanModal()" style="margin-top: 15px; padding: 8px 16px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">關閉</button>
     </div>
@@ -681,7 +689,9 @@
                 optimalPlanContent: '輸入總消費額，系統將計算出最接近的消費券組合方案，顯示可使用消費券總額、無法使用消費券金額以及各渠道的消費券使用明細。',
                 channelTotal: '此渠道支付總額',
                 selfPay: '無法使用消費券金額',
-                availableAmount: '可使用消費券總額'
+                availableAmount: '可使用消費券總額',
+                planGroupSelect: '分組選項',
+                planAllGroups: '所有分組'
             },
             en: {
                 appTitle: 'Macau Coupon Manager',
@@ -749,7 +759,9 @@
                 optimalPlanContent: 'Enter your total consumption amount, and the system will calculate the best combination of coupons, showing the available coupon amount, the amount that cannot be covered by coupons, and detailed usage by payment channel.',
                 channelTotal: 'Total Payment from this channel',
                 selfPay: "Without coupon amount",
-                availableAmount: 'Available coupon amount'
+                availableAmount: 'Available coupon amount',
+                planGroupSelect: 'Group Selection',
+                planAllGroups: 'All Groups'
             }
         };
 
@@ -810,6 +822,8 @@
             document.getElementById('optimalPlanTitle').textContent = lang.optimalPlanTitle;
             document.getElementById('optimalPlanContent').textContent = lang.optimalPlanContent;
             document.getElementById('optimalPlanText').textContent = lang.optimalPlan;
+            document.getElementById('planGroupSelectLabel').textContent = lang.planGroupSelect;
+            document.getElementById('planAllGroupsOption').textContent = lang.planAllGroups;
             
             renderTable();
         }
@@ -1273,6 +1287,115 @@
             document.getElementById('planModal').style.display = 'block';
             document.getElementById('planResult').style.display = 'none';
             document.getElementById('consumptionAmount').value = '';
+            
+            // 更新分組選擇
+            updatePlanGroupSelect();
+            
+            // 重置選中的分組為"全部"
+            selectedPlanGroupColor = 'all';
+            
+            // 移除顏色圓圈的選中狀態
+            document.querySelectorAll('#planGroupColors .group-color').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // 添加"所有分組"的選中狀態
+            document.getElementById('planAllGroupsOption').classList.add('selected');
+        }
+        
+        function updatePlanGroupSelect() {
+            const colorOptionsContainer = document.getElementById('planGroupColors');
+            const lang = translations[currentLanguage];
+            
+            // 清除所有顏色選項
+            while (colorOptionsContainer.children.length > 0) {
+                colorOptionsContainer.removeChild(colorOptionsContainer.lastChild);
+            }
+            
+            // 更新"所有分組"選項的文本
+            document.getElementById('planAllGroupsOption').textContent = lang.planAllGroups;
+            
+            // 獲取所有使用的分組顏色
+            const usedGroupColors = new Set();
+            records.forEach(record => {
+                if (record.groupColor) {
+                    usedGroupColors.add(record.groupColor);
+                }
+            });
+            
+            // 為每個分組創建一個顏色圓點
+            usedGroupColors.forEach(color => {
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'group-color';
+                colorDiv.style.backgroundColor = color;
+                colorDiv.dataset.color = color;
+                colorDiv.addEventListener('click', selectPlanGroupColor);
+                colorOptionsContainer.appendChild(colorDiv);
+            });
+        }
+        
+        // 全局變量來存儲當前為最優方案選擇的分組顏色
+        let selectedPlanGroupColor = 'all';
+
+        function selectPlanGroupColor(event) {
+            const target = event.target;
+            const allOption = document.getElementById('planAllGroupsOption');
+            
+            // 如果點擊的是 "所有分組" 選項
+            if (target === allOption || target.closest('#planAllGroupsOption')) {
+                // 移除顏色選項的選中樣式
+                document.querySelectorAll('#planGroupColors .group-color').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                
+                // 為 "所有分組" 添加選中樣式
+                allOption.classList.add('selected');
+                
+                // 更新選中的顏色為 "all"
+                selectedPlanGroupColor = 'all';
+                return;
+            }
+            
+            // 處理點擊顏色圓圈的情況
+            const colorCircle = target.classList.contains('group-color') 
+                ? target 
+                : target.closest('.group-color');
+                
+            if (!colorCircle) return;
+            
+            // 移除所有選中樣式
+            document.querySelectorAll('#planGroupColors .group-color').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // 移除 "所有分組" 的選中樣式
+            allOption.classList.remove('selected');
+            
+            // 為點擊的顏色圓圈添加選中樣式
+            colorCircle.classList.add('selected');
+            
+            // 更新選中的顏色
+            selectedPlanGroupColor = colorCircle.dataset.color;
+        }
+
+        function customizeGroupSelect() {
+            // 獲取選擇框
+            const select = document.getElementById('planGroupSelect');
+            
+            // 監聽change事件，在選擇後更新顯示的顏色
+            select.addEventListener('change', function() {
+                const selectedValue = this.value;
+                if (selectedValue !== 'all') {
+                    this.style.borderLeft = `10px solid ${selectedValue}`;
+                } else {
+                    this.style.borderLeft = '';
+                }
+            });
+
+            // 首次加載時設置樣式
+            if (select.value !== 'all') {
+                select.style.borderLeft = `10px solid ${select.value}`;
+            }
         }
         
         function closePlanModal() {
@@ -1282,6 +1405,9 @@
         function calculateOptimalPlan() {
             const amount = parseInt(document.getElementById('consumptionAmount').value);
             if (isNaN(amount) || amount <= 0) return;
+            
+            // 獲取選定的分組（現在使用全局變量）
+            const selectedGroup = selectedPlanGroupColor;
             
             // 計算最大可用的消費券總金額（不能超過總消費額除以3）
             const maxCouponAmount = Math.floor(amount / 3);
@@ -1293,20 +1419,24 @@
             const availableCoupons = [];
             
             records.forEach(record => {
-                const expiryDate = new Date(record.expiry);
-                if (expiryDate >= today) {
-                    const channelDisplay = currentLanguage === 'zh' ? record.channel : record.channelEn;
-                    record.coupons.forEach((coupon, index) => {
-                        if (coupon.status === '未使用' && coupon.value !== null && coupon.value > 0) {
-                            availableCoupons.push({
-                                recordId: record.id,
-                                couponIndex: index,
-                                value: coupon.value,
-                                channel: channelDisplay,
-                                date: record.dateAdded
-                            });
-                        }
-                    });
+                // 檢查記錄是否匹配選定的分組
+                if (selectedGroup === 'all' || record.groupColor === selectedGroup) {
+                    const expiryDate = new Date(record.expiry);
+                    if (expiryDate >= today) {
+                        const channelDisplay = currentLanguage === 'zh' ? record.channel : record.channelEn;
+                        record.coupons.forEach((coupon, index) => {
+                            if (coupon.status === '未使用' && coupon.value !== null && coupon.value > 0) {
+                                availableCoupons.push({
+                                    recordId: record.id,
+                                    couponIndex: index,
+                                    value: coupon.value,
+                                    channel: channelDisplay,
+                                    date: record.dateAdded,
+                                    groupColor: record.groupColor
+                                });
+                            }
+                        });
+                    }
                 }
             });
             
