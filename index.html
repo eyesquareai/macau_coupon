@@ -621,6 +621,13 @@
         });
         saveData();
 
+        // 檢查日期是否未過期（含當天）
+        function isNotExpired(expiryDate) {
+            const today = new Date();
+            today.setUTCDate(today.getUTCDate());
+            return expiryDate >= today || expiryDate.toDateString() === today.toDateString();
+        }
+
         // Language translations
         const translations = {
             zh: {
@@ -1032,6 +1039,11 @@
         
         function getNextSunday() {
             const date = new Date();
+            // If today is already Sunday (0), return today's date
+            if (date.getUTCDay() === 0) {
+                return date.toISOString().split('T')[0];
+            }
+            // Otherwise, find the next Sunday
             date.setUTCDate(date.getUTCDate() + ((7 - date.getUTCDay()) % 7 || 7));
             return date.toISOString().split('T')[0];
         }
@@ -1049,7 +1061,7 @@
             
             // Recalculate total - only counting "未使用" coupons
             record.total = record.coupons.reduce((sum, c) => {
-                return c.status === '未使用' ? sum + (c.value || 0) : sum; // If '已使用', value is treated as 0
+                return c.status === '未使用' ? sum + (c.value || 0) : sum;
             }, 0) * 3;
             
             saveData(); // Save to local storage
@@ -1063,10 +1075,7 @@
                 : records.filter(record => record.groupColor === selectedGroupColor))
                 .filter(record => {
                     const expiryDate = new Date(record.expiry);
-                    const today = new Date();
-                    today.setUTCDate(today.getUTCDate());
-                    // Include records that expire today or later
-                    return expiryDate >= today || expiryDate.toDateString() === today.toDateString();
+                    return isNotExpired(expiryDate);
                 });
 
             // Calculate total consumption (sum of all record totals)
@@ -1191,13 +1200,10 @@
         }
 
         function deleteExpiredRecords() {
-            const today = new Date();
-            today.setUTCDate(today.getUTCDate());
-            
             // 過濾出未過期的記錄
             const newRecords = records.filter(record => {
                 const expiryDate = new Date(record.expiry);
-                return expiryDate >= today || expiryDate.toDateString() === today.toDateString();
+                return isNotExpired(expiryDate);
             });
             
             // 如果有記錄被刪除，更新數據並重新渲染
@@ -1216,14 +1222,11 @@
         }
 
         function markAllUsed() {
-            const today = new Date();
-            today.setUTCDate(today.getUTCDate());
-            
             let hasChanges = false;
             
             records.forEach(record => {
                 const expiryDate = new Date(record.expiry);
-                if (expiryDate >= today || expiryDate.toDateString() === today.toDateString()) { // Only process non-expired records
+                if (isNotExpired(expiryDate)) { // Only process non-expired records
                     record.coupons.forEach(coupon => {
                         if (coupon.status === '未使用') {
                             coupon.status = '已使用';
@@ -1248,13 +1251,8 @@
             const record = records.find(r => r.id === recordId);
             if (!record) return;
             
-            const today = new Date();
-            today.setUTCDate(today.getUTCDate());
             const expiryDate = new Date(record.expiry);
-            const diffTime = expiryDate - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 3600 * 24)) + 1;
-            
-            if (diffDays <= 0) return; // Skip if record is expired
+            if (!isNotExpired(expiryDate)) return; // Skip if record is expired
             
             // Check if all coupons are used
             const allUsed = record.coupons.every(c => c.status === '已使用');
@@ -1413,16 +1411,13 @@
             const maxCouponAmount = Math.floor(amount / 3);
             
             // 獲取所有未過期且未使用的消費券
-            const today = new Date();
-            today.setUTCDate(today.getUTCDate());
-            
             const availableCoupons = [];
             
             records.forEach(record => {
                 // 檢查記錄是否匹配選定的分組
                 if (selectedGroup === 'all' || record.groupColor === selectedGroup) {
                     const expiryDate = new Date(record.expiry);
-                    if (expiryDate >= today || expiryDate.toDateString() === today.toDateString()) {
+                    if (isNotExpired(expiryDate)) {
                         const channelDisplay = currentLanguage === 'zh' ? record.channel : record.channelEn;
                         record.coupons.forEach((coupon, index) => {
                             if (coupon.status === '未使用' && coupon.value !== null && coupon.value > 0) {
