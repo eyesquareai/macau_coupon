@@ -1197,7 +1197,7 @@
             // 過濾出未過期的記錄
             const newRecords = records.filter(record => {
                 const expiryDate = new Date(record.expiry);
-                return expiryDate >= today;
+                return expiryDate >= today || expiryDate.toDateString() === today.toDateString();
             });
             
             // 如果有記錄被刪除，更新數據並重新渲染
@@ -1223,7 +1223,7 @@
             
             records.forEach(record => {
                 const expiryDate = new Date(record.expiry);
-                if (expiryDate >= today) { // Only process non-expired records
+                if (expiryDate >= today || expiryDate.toDateString() === today.toDateString()) { // Only process non-expired records
                     record.coupons.forEach(coupon => {
                         if (coupon.status === '未使用') {
                             coupon.status = '已使用';
@@ -1422,7 +1422,7 @@
                 // 檢查記錄是否匹配選定的分組
                 if (selectedGroup === 'all' || record.groupColor === selectedGroup) {
                     const expiryDate = new Date(record.expiry);
-                    if (expiryDate >= today) {
+                    if (expiryDate >= today || expiryDate.toDateString() === today.toDateString()) {
                         const channelDisplay = currentLanguage === 'zh' ? record.channel : record.channelEn;
                         record.coupons.forEach((coupon, index) => {
                             if (coupon.status === '未使用' && coupon.value !== null && coupon.value > 0) {
