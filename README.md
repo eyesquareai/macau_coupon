@@ -29,3 +29,6 @@ v6:
 add optimal consumption plan feature for calculating the best combination of coupons based on total consumption amount
 optimize coupon usage suggestion with visual grouping by payment channel
 show the exact breakdown of consumption amount that can use coupons and without coupon amount
+
+v7:
+default expiry date for new records is the next Thursday (was next Sunday); if today is Thursday, expiry defaults to today

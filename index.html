@@ -859,7 +859,7 @@
                 channelEn: channelMapping[channel] || channel,
                 dateAdded: today.toISOString().split('T')[0],
                 coupons: [{ value: null, status: '未使用' }, { value: null, status: '未使用' }, { value: null, status: '未使用' }],
-                expiry: getNextSunday(),
+                expiry: getNextThursday(),
                 total: 0,
                 groupColor: selectedGroupColor
             };
@@ -1039,14 +1039,13 @@
             }
         }
         
-        function getNextSunday() {
+        function getNextThursday() {
             const date = new Date();
-            // If today is already Sunday (0), return today's date
-            if (date.getUTCDay() === 0) {
+            if (date.getUTCDay() === 4) {
                 return date.toISOString().split('T')[0];
             }
-            // Otherwise, find the next Sunday
-            date.setUTCDate(date.getUTCDate() + ((7 - date.getUTCDay()) % 7 || 7));
+            const daysUntilThursday = (4 - date.getUTCDay() + 7) % 7;
+            date.setUTCDate(date.getUTCDate() + daysUntilThursday);
             return date.toISOString().split('T')[0];
         }
 
